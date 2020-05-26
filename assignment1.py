@@ -17,7 +17,7 @@ img = nib.load(data_directory)
 imgData = img.get_fdata()
 from numpy.fft import fft, fft2, ifft, ifft2, fftfreq, fftshift
 
-class Assignment1():
+class ErnieImageViewer():
 
     
      #shape (274, 384, 384)
@@ -30,8 +30,8 @@ class Assignment1():
             plt.imshow(self.anti_reverse(brain[:, slice, :])) 
             matplotlib.image.imsave('sagittal.png', self.anti_reverse(brain[:, slice, :]))
         elif view == 'coronal':
-            plt.imshow(self.anti_reverse(brain[slice, :, :]))
-            matplotlib.image.imsave('coronal.png', self.anti_reverse(brain[slice, :, :]))
+            plt.imshow(self.anti_reverse(brain[190, :, :]))
+            matplotlib.image.imsave('coronal.png', self.anti_reverse(brain[190, :, :]))
         
          
     
@@ -94,15 +94,15 @@ class Assignment1():
     result = FFt2dWithLog(img)
 
 '''    '''
-a1 = Assignment1()
+a1 = ErnieImageViewer()
 plt.subplot(3,3,2)
 res = a1.viewer(a1,imgData,slice=250,view="axial")
 plt.subplot(3,3,7)
 a1.FFt2dWithLog(a1.anti_reverse(imgData[:,:,250]))
 '''
 
-def outPutImage(direction):
-    a1 = Assignment1()
-    a1.viewer(a1,imgData,slice=250,view=direction)
+def outPutImage(direction, sliceValue):
+    a1 = ErnieImageViewer()
+    return a1.viewer(a1,imgData,slice=sliceValue,view=direction)
 
-outPutImage("axial")
+outPutImage("axial", 250)
