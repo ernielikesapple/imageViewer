@@ -18,9 +18,8 @@ imgData = img.get_fdata()
 from numpy.fft import fft, fft2, ifft, ifft2, fftfreq, fftshift
 
 class ErnieImageViewer():
-
     
-     #shape (274, 384, 384)
+    #shape (274, 384, 384)
     @staticmethod
     def viewer(self,brain,slice, view):
         if view == 'axial': 
@@ -32,16 +31,6 @@ class ErnieImageViewer():
         elif view == 'coronal':
             plt.imshow(self.anti_reverse(brain[190, :, :]))
             matplotlib.image.imsave('coronal.png', self.anti_reverse(brain[190, :, :]))
-        
-         
-    
-    @staticmethod
-    def FFt2dWithLog (imageSlice):
-        Ahat = fft2(imageSlice)
-        F = np.log(np.abs(fftshift(Ahat)))
-        plt.imshow(F)
-    
-    
     
     @staticmethod   
     def anti_reverse(array):
@@ -57,17 +46,53 @@ class ErnieImageViewer():
             
         return new_matrix
     
-    
-    
-    
-    
-    
-    
+    @staticmethod 
+    def FFt2dWithLog (imageSlice):  
+        Ahat = fft2(imageSlice)
+        F = np.log(np.abs(fftshift(Ahat)))
+        plt.imshow(F)
+        return F
+        
+    @staticmethod        
+    def frequencyDomainGaussianFilter (img, orignalImage):   
+        sz_x = img.shape[0]
+        sz_y = img.shape[1]
+        [X, Y] = np.mgrid[0:sz_x, 0:sz_y]
+        xpr = X - int(sz_x) // 2
+        ypr = Y - int(sz_y) // 2
+        count=1
+        
+        
+        for sigma in range(1,25,5):
+            gaussfilt = np.exp(-((xpr**2+ypr**2)/(2*sigma**2)))/(2*np.pi*sigma**2)
+            plt.subplot(1,5,count);
+            
+            
+            orignalData = fftshift(fft2(orignalImage))
+            
+            plt.imshow(np.abs(ifft2(gaussfilt* orignalData)));
+            
+            plt.title('sigma='+str(sigma)) 
+            count =count + 1
+            
     
 
+
+
+
+
+
+
+
+
             
-     
-    
+    @staticmethod      
+    def getSourceImage (imageDirectoryNfilename):
+        directory = os.path.join(os.path.dirname(__file__))
+        dataDirectory = os.path.join(directory, imageDirectoryNfilename)
+        img = nib.load(dataDirectory)
+        imgData = img.get_fdata()
+        return imgData
     
     '''
     nib.viewers.OrthoSlicer3D(imgData, affine=None, axes=None, title=None)
@@ -101,8 +126,25 @@ plt.subplot(3,3,7)
 a1.FFt2dWithLog(a1.anti_reverse(imgData[:,:,250]))
 '''
 
+#result for q1a
+a1 = ErnieImageViewer()
+
 def outPutImage(direction, sliceValue):
-    a1 = ErnieImageViewer()
+    
     return a1.viewer(a1,imgData,slice=sliceValue,view=direction)
 
 outPutImage("axial", 250)
+
+#result for q2a
+q2AimgData = a1.getSourceImage("images/t2.nii")
+
+sliceQ2a = a1.FFt2dWithLog (q2AimgData[:,:,250])
+
+#result for q2b
+
+q2BimgData = a1.getSourceImage("images/swi.nii")
+sliceQ2b = a1.FFt2dWithLog (q2BimgData[:,:,250])
+a1.frequencyDomainGaussianFilter (sliceQ2b, q2BimgData[:,:,250])
+
+
+
