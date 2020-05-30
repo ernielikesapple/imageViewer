@@ -6,29 +6,27 @@ Created on Tue May 19 21:04:00 2020
 @author: ernie
 """
 import os
-current_directory = os.path.join(os.path.dirname(__file__))
-data_directory = os.path.join(current_directory, "images/t1.nii")
 import numpy as np
 from nibabel.testing import data_path
 import nibabel as nib
 import matplotlib.pyplot as plt
 import matplotlib 
-img = nib.load(data_directory)
-imgData = img.get_fdata()
 from numpy.fft import fft, fft2, ifft, ifft2, fftfreq, fftshift
 
-class ErnieImageViewer():
+class Assignment1():
     
-    #shape (274, 384, 384)
     @staticmethod
-    def viewer(self,brain,slice, view):
+    def showSlice(self,brain,slice, view):
         if view == 'axial': 
+            plt.title("raw")
             plt.imshow(self.anti_reverse(brain[:, :, slice])) #to do, modify the antireverse function
             matplotlib.image.imsave('axial.png', self.anti_reverse(brain[:, :, slice]))
         elif view == 'sagittal':
+            plt.title("raw")
             plt.imshow(self.anti_reverse(brain[:, slice, :])) 
             matplotlib.image.imsave('sagittal.png', self.anti_reverse(brain[:, slice, :]))
         elif view == 'coronal':
+            plt.title("raw")
             plt.imshow(self.anti_reverse(brain[190, :, :]))
             matplotlib.image.imsave('coronal.png', self.anti_reverse(brain[190, :, :]))
     
@@ -50,11 +48,12 @@ class ErnieImageViewer():
     def FFt2dWithLog (imageSlice):  
         Ahat = fft2(imageSlice)
         F = np.log(np.abs(fftshift(Ahat)))
+        plt.title("frequency domain of raw")
         plt.imshow(F)
         return F
         
     @staticmethod        
-    def frequencyDomainGaussianFilter (img, orignalImage):   
+    def frequencyDomainGaussianFilter (img, orignalImageData):   
         sz_x = img.shape[0]
         sz_y = img.shape[1]
         [X, Y] = np.mgrid[0:sz_x, 0:sz_y]
@@ -63,20 +62,54 @@ class ErnieImageViewer():
         count=1
         
         
+        #plt.figure(figsize=(6.4*5, 4.8*5))
         for sigma in range(1,25,5):
             gaussfilt = np.exp(-((xpr**2+ypr**2)/(2*sigma**2)))/(2*np.pi*sigma**2)
             plt.subplot(1,5,count);
             
             
-            orignalData = fftshift(fft2(orignalImage))
+            orignalData = fftshift(fft2(orignalImageData)) #Fourier transform of raw
             
             plt.imshow(np.abs(ifft2(gaussfilt* orignalData)));
             
+            #resultImage[i] = np.abs(ifft2(gaussfilt* orignalData))
+       
+            
+            plt.title('sigma='+str(sigma)) 
+            count =count + 1
+        
+        #return resultImage
+        
+    @staticmethod        
+    def fftnToEdgeDetection (img, orignalImageData): 
+        
+        sz_x = img.shape[0]
+        sz_y = img.shape[1]
+        [X, Y] = np.mgrid[0:sz_x, 0:sz_y]
+        xpr = X - int(sz_x) // 2
+        ypr = Y - int(sz_y) // 2
+        count=1
+        
+        plt.figure(figsize=(6.4*5, 4.8*5))
+        for sigma in range(1,25,5):
+            gaussfilt = np.exp(-((xpr**2+ypr**2)/(2*sigma**2)))/(2*np.pi*sigma**2)
+            plt.subplot(1,5,count);
+            
+            
+            orignalData = fftshift(fft2(orignalImageData)) #Fourier transform of raw
+            frequencyDomainGaussianFilter = np.abs(ifft2(gaussfilt* orignalData)) #gaussianFilter
+            
+            FS = np.fft.fftn(frequencyDomainGaussianFilter) #fftn 
+            fftnToEdgeDetection = np.log(np.abs(np.fft.fftshift(FS))**2)
+            plt.imshow(fftnToEdgeDetection)
+        
+            
+            #return fftnToEdgeDetection
             plt.title('sigma='+str(sigma)) 
             count =count + 1
             
-    
-
+        
+     
 
 
 
@@ -93,9 +126,9 @@ class ErnieImageViewer():
         img = nib.load(dataDirectory)
         imgData = img.get_fdata()
         return imgData
-    
+  
     '''
-    nib.viewers.OrthoSlicer3D(imgData, affine=None, axes=None, title=None)
+    nib.showSlices.OrthoSlicer3D(imgData, affine=None, axes=None, title=None)
     nib.viewers.OrthoSlicer3D(imgData).show()
     '''
     '''
@@ -119,26 +152,27 @@ class ErnieImageViewer():
     result = FFt2dWithLog(img)
 
 '''    '''
-a1 = ErnieImageViewer()
+a1 = Assignment1()
 plt.subplot(3,3,2)
-res = a1.viewer(a1,imgData,slice=250,view="axial")
+res = a1.showSlice(a1,imgData,slice=250,view="axial")
 plt.subplot(3,3,7)
 a1.FFt2dWithLog(a1.anti_reverse(imgData[:,:,250]))
 '''
 
 #result for q1a
-a1 = ErnieImageViewer()
+a1 = Assignment1()
 
-def outPutImage(direction, sliceValue):
-    
-    return a1.viewer(a1,imgData,slice=sliceValue,view=direction)
+#result for q1a
+q1AimgData = a1.getSourceImage("images/t1.nii")
+a1.showSlice(a1,q1AimgData,slice=250,view="axial")
 
-outPutImage("axial", 250)
+def outPutSliceImage(direction, sliceValue):
+    return a1.showSlice(a1,q1AimgData,slice=sliceValue,view=direction)
+
 
 #result for q2a
 q2AimgData = a1.getSourceImage("images/t2.nii")
-
-sliceQ2a = a1.FFt2dWithLog (q2AimgData[:,:,250])
+#sliceQ2a = a1.FFt2dWithLog (q2AimgData[:,:,250])
 
 #result for q2b
 
@@ -148,3 +182,11 @@ a1.frequencyDomainGaussianFilter (sliceQ2b, q2BimgData[:,:,250])
 
 
 
+#result for q2c
+#a1.fftnToEdgeDetection(sliceQ2b, q2BimgData[:,:,250])
+
+
+def outPutForFFt2dWithLog():
+    a1.FFt2dWithLog (q2AimgData[:,:,250])
+    matplotlib.image.imsave('outPutForFFt2dWithLog.png', a1.anti_reverse(a1.FFt2dWithLog (q2AimgData[:,:,250])))
+   
