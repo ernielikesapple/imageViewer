@@ -11,7 +11,10 @@ from nibabel.testing import data_path
 import nibabel as nib
 import matplotlib.pyplot as plt
 import matplotlib 
-from numpy.fft import fft, fft2, ifft, ifft2, fftfreq, fftshift
+from numpy.fft import fft, fft2, ifft, ifft2, fftfreq, fftshift, fftn, ifftn
+
+import sys
+np.set_printoptions(threshold=sys.maxsize)
 
 class Assignment1():
     
@@ -52,62 +55,56 @@ class Assignment1():
         plt.imshow(F)
         return F
         
-    @staticmethod        
-    def frequencyDomainGaussianFilter (img, orignalImageData):   
-        sz_x = img.shape[0]
-        sz_y = img.shape[1]
+    @staticmethod
+    def frequencyDomainGaussianFilterForQ2b (resultFromQ2a, orignalImageData):   
+        sz_x = resultFromQ2a.shape[0]
+        sz_y = resultFromQ2a.shape[1]
         [X, Y] = np.mgrid[0:sz_x, 0:sz_y]
         xpr = X - int(sz_x) // 2
         ypr = Y - int(sz_y) // 2
         count=1
         
         
-        #plt.figure(figsize=(6.4*5, 4.8*5))
+        plt.figure(figsize=(5*5, 4.8*5))
         for sigma in range(1,25,5):
             gaussfilt = np.exp(-((xpr**2+ypr**2)/(2*sigma**2)))/(2*np.pi*sigma**2)
             plt.subplot(1,5,count);
-            
-            
+
             orignalData = fftshift(fft2(orignalImageData)) #Fourier transform of raw
-            
             plt.imshow(np.abs(ifft2(gaussfilt* orignalData)));
             
-            #resultImage[i] = np.abs(ifft2(gaussfilt* orignalData))
-       
-            
             plt.title('sigma='+str(sigma)) 
             count =count + 1
         
-        #return resultImage
-        
-    @staticmethod        
-    def fftnToEdgeDetection (img, orignalImageData): 
-        
+    @staticmethod
+    def GaussianFilterForSmoothing (img):   
         sz_x = img.shape[0]
         sz_y = img.shape[1]
         [X, Y] = np.mgrid[0:sz_x, 0:sz_y]
         xpr = X - int(sz_x) // 2
         ypr = Y - int(sz_y) // 2
-        count=1
+        sigma = 21
+        gaussfilt = np.exp(-((xpr**2+ypr**2)/(2*sigma**2)))/(2*np.pi*sigma**2)
+        orignalData = fftshift(fft2(img)) #Fourier transform of raw
+        plt.imshow(np.abs(ifft2(gaussfilt* orignalData)));
         
-        plt.figure(figsize=(6.4*5, 4.8*5))
-        for sigma in range(1,25,5):
-            gaussfilt = np.exp(-((xpr**2+ypr**2)/(2*sigma**2)))/(2*np.pi*sigma**2)
-            plt.subplot(1,5,count);
-            
-            
-            orignalData = fftshift(fft2(orignalImageData)) #Fourier transform of raw
-            frequencyDomainGaussianFilter = np.abs(ifft2(gaussfilt* orignalData)) #gaussianFilter
-            
-            FS = np.fft.fftn(frequencyDomainGaussianFilter) #fftn 
-            fftnToEdgeDetection = np.log(np.abs(np.fft.fftshift(FS))**2)
-            plt.imshow(fftnToEdgeDetection)
+    @staticmethod
+    def highPassFilterForEdgeDetection (img):   
+        rows, cols = img.shape
+        crow, ccol = int(rows / 2), int(cols / 2)  # center
+
+        # Circular HPF mask, center circle is 0, remaining all ones
+        mask = np.ones((rows, cols))
+        r = 17
+        center = [crow, ccol]
+        x, y = np.ogrid[:rows, :cols]
+        print((x - center[0]) ** 2 + (y - center[1]) ** 2)
+        mask_area = (x - center[0]) ** 2 + (y - center[1]) ** 2 <= r*r
+        mask[mask_area] = 0
         
-            
-            #return fftnToEdgeDetection
-            plt.title('sigma='+str(sigma)) 
-            count =count + 1
-            
+        orignalData = fftshift(fft2(img)) #Fourier transform of raw
+         
+        plt.imshow(np.abs(ifft2(orignalData*mask)));
         
      
 
@@ -119,13 +116,15 @@ class Assignment1():
 
 
             
-    @staticmethod      
+    @staticmethod 
     def getSourceImage (imageDirectoryNfilename):
         directory = os.path.join(os.path.dirname(__file__))
         dataDirectory = os.path.join(directory, imageDirectoryNfilename)
         img = nib.load(dataDirectory)
         imgData = img.get_fdata()
         return imgData
+    
+    
   
     '''
     nib.showSlices.OrthoSlicer3D(imgData, affine=None, axes=None, title=None)
@@ -164,7 +163,7 @@ a1 = Assignment1()
 
 #result for q1a
 q1AimgData = a1.getSourceImage("images/t1.nii")
-a1.showSlice(a1,q1AimgData,slice=250,view="axial")
+#a1.showSlice(a1,q1AimgData,slice=250,view="axial")
 
 def outPutSliceImage(direction, sliceValue):
     return a1.showSlice(a1,q1AimgData,slice=sliceValue,view=direction)
@@ -177,14 +176,15 @@ q2AimgData = a1.getSourceImage("images/t2.nii")
 #result for q2b
 
 q2BimgData = a1.getSourceImage("images/swi.nii")
-sliceQ2b = a1.FFt2dWithLog (q2BimgData[:,:,250])
-a1.frequencyDomainGaussianFilter (sliceQ2b, q2BimgData[:,:,250])
-
+#sliceQ2b = a1.FFt2dWithLog (q2BimgData[:,:,250])
+#a1.frequencyDomainGaussianFilterForQ2b (sliceQ2b, q2BimgData[:,:,250])
 
 
 #result for q2c
-#a1.fftnToEdgeDetection(sliceQ2b, q2BimgData[:,:,250])
+q1AimgData = a1.getSourceImage("images/tof.nii")
+#a1.GaussianFilterForSmoothing(q1AimgData[:,:,250])
 
+a1.highPassFilterForEdgeDetection(q1AimgData[:,:,120])
 
 def outPutForFFt2dWithLog():
     a1.FFt2dWithLog (q2AimgData[:,:,250])
